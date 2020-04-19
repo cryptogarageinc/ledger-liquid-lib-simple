@@ -934,6 +934,7 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
           console.warn(e);
           console.log(`connection fail.(exception) count=${count}`, e);
           ecode = 0x6000;
+          errMsg = errText;
           break;
         }
       }
