@@ -15,7 +15,7 @@ let setIssueTx = 0;
 let setReissueTx = 0;
 let authorizationPrivkey = '47ab8b0e5f8ea508808f9e03b804d623a7cb81cbf1f39d3e976eb83f9284ecde';
 let setAuthorization = false;
-let authPubKey = '02b85b0e5f5b41f1a95bbf9a83edd95c741223c6d9dc5fe607de18f015684ff56e';
+let authPubKey = ''; // 04b85b0e5f5b41f1a95bbf9a83edd95c741223c6d9dc5fe607de18f015684ff56ec359705fcf9bbeb1620fb458e15e3d99f23c6f5df5e91e016686371a65b16f0c
 let setIssuanceToTop = 0;
 let setReissuanceToTop = 0;
 let connectionTest = false;
@@ -201,9 +201,26 @@ async function execBip32PathTest() {
 }
 
 async function setAuthKeyTest() {
+  if (!authPubKey) {
+    console.log(' Please input authorization pubkey!');
+    console.log(' usage:');
+    console.log('     npm run setauthkey -- -apk <authrizationPubkey>');
+    return;
+  }
+  if (authPubKey.length !== 130) {
+    console.log(' Authorization pubkey can only be used with uncompressed pubkey!');
+    return;
+  }
   const liquidLib = new LedgerLiquidWrapper(networkType);
+  const connRet = await liquidLib.connect(0, '');
+  if (!connRet.success) {
+    console.log('connection failed. ', connRet);
+    return;
+  }
+  console.log('authrizationPubkey:', authPubKey);
   const setupRet = await liquidLib.setupHeadlessAuthorization(authPubKey);
   console.log('--HEADLESS LIQUID SEND AUTHORIZATION PUBLIC KEY --\n', setupRet);
+  await liquidLib.disconnect();
 }
 
 async function execFixedTest() {

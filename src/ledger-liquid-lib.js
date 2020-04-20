@@ -896,7 +896,7 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
     this.waitForConnecting = true;
     const waitLimit = (typeof maxWaitTime === 'number') ? maxWaitTime : 0;
     const path = (typeof devicePath === 'string') ? devicePath : '';
-    console.info(`connection path=${path}`);
+    // console.info('connection device:', (!path) ? 'auto' : path);
     let transport = undefined;
     let count = (waitLimit < 1) ? 0 : 1;
     let ecode = disconnectEcode;
