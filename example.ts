@@ -205,6 +205,8 @@ async function setAuthKeyTest() {
     console.log(' Please input authorization pubkey!');
     console.log(' usage:');
     console.log('     npm run setauthkey -- -apk <authrizationPubkey>');
+    console.log(' example(develop key):');
+    console.log('     npm run setauthkey -- -apk 04b85b0e5f5b41f1a95bbf9a83edd95c741223c6d9dc5fe607de18f015684ff56ec359705fcf9bbeb1620fb458e15e3d99f23c6f5df5e91e016686371a65b16f0c');
     return;
   }
   if (authPubKey.length !== 130) {
