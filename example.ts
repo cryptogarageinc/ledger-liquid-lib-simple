@@ -1,5 +1,5 @@
 /* eslint-disable require-jsdoc */
-import {LedgerLiquidWrapper, WalletUtxoData, SignatureData, NetworkType, GetSignatureState, ProgressInfo} from './src/ledger-liquid-lib';
+import {LedgerLiquidWrapper, WalletUtxoData, SignatureData, NetworkType, GetSignatureState, ProgressInfo, ResponseInfo, GetSignatureAddressResponse} from './src/ledger-liquid-lib';
 
 process.on('unhandledRejection', console.dir);
 
@@ -344,26 +344,81 @@ async function execFixedTest() {
   ];
   const authorizationSignature = '30430220307607146431862975de982412170cc9b45f3cfa2abbd351c634840b785f2785021f3c478b9de2cb55801fb924c5c219ebe71d58f8d09f6df32d8e17c105ded6a3';
   try {
-    const liquidLib = new LedgerLiquidWrapper(networkType);
-    const connRet = await liquidLib.connect(60, '');
-    if (!connRet.success) {
-      throw Error(connRet.errorMessage);
+    const ledgerLib = new LedgerLiquidWrapper(networkType);
+
+    let result: GetSignatureAddressResponse = {
+      success: false,
+      errorCode: 0,
+      errorCodeHex: '',
+      errorMessage: '',
+      disconnect: false,
+      signatureList: []
+    }
+    try {
+      let connRet: ResponseInfo = {
+        success: false,
+        errorCode: 0,
+        errorCodeHex: '',
+        errorMessage: '',
+        disconnect: false
+      }
+      let count = 0;
+      const accessingError = 0x9999
+      const countLimit = 300
+      do {
+        do {
+          if (connRet.errorCode == accessingError) {
+            await sleep(1000)
+            ++count
+          }
+          connRet = await ledgerLib.connect(0, undefined)
+          // console.log(connRet);
+        } while ((connRet.errorCode == accessingError) && (count < countLimit))
+        result.success = connRet.success
+        result.errorCode = connRet.errorCode
+        result.errorCodeHex = connRet.errorCodeHex
+        result.disconnect = connRet.disconnect
+        if (!result.success) {
+          throw new Error(`getSignature ecode=${result.errorCodeHex} msg=${result.errorMessage}`)
+        }
+
+        // clear
+        count = 0
+        if (debugMode) {
+          isDumpSignature = true;
+          setTimeout(async () => {
+            await dumpSignatureProgress(ledgerLib);
+          }, 500);
+        }
+
+        const calcInfo = ledgerLib.calcSignatureProgress(
+            proposalTx, walletUtxoList);
+        if (calcInfo.success) {
+          console.log(`sign utxo count = ${calcInfo.analyzeUtxo.total}`);
+          console.log(`tx in/out/issuance count = ${calcInfo.inputTx.total}`);
+        } else {
+          console.log('calcSignatureProgress:', calcInfo);
+        }
+        do {
+          if (result.errorCode == accessingError) {
+            await sleep(1000)
+            ++count
+          }
+          result = await ledgerLib.getSignature(proposalTx, walletUtxoList, authorizationSignature)
+          // console.log(result);
+        } while ((result.errorCode == accessingError) && (count < countLimit))
+        // Retry connection on disconnect
+      } while (result.disconnect)
+
+      await ledgerLib.disconnect()
+      if (!result.success) {
+        throw new Error(`getSignature ecode=${result.errorCodeHex} msg=${result.errorMessage}`)
+      }
+    } catch (e) {
+      throw new Error(`getSignature ecode=${result.errorCodeHex} msg=${result.errorMessage}`)
     }
 
-    const publicKey = await liquidLib.getWalletPublicKey("44'/0'/0'");
-    console.log('pubkey:', publicKey);
-
-    const xpubKey = await liquidLib.getXpubKey("44'/0'/0'");
-    console.log('xpubKey:', xpubKey);
-
-    if (debugMode) {
-      isDumpSignature = true;
-      setTimeout(async () => {
-        await dumpSignatureProgress(liquidLib);
-      }, 500);
-    }
-    const signatureResult = await liquidLib.getSignature(proposalTx,
-        walletUtxoList, authorizationSignature);
+    const signatureResult = result;
     console.log('signatureResult:', JSON.stringify(signatureResult, (key, value) =>
             typeof value === 'bigint' ? value.toString() : value, '  '));
     isDumpSignature = false;

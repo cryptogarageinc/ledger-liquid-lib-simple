@@ -962,6 +962,25 @@ async function liquidProvideIssuanceInformation(transport, dectx,
   return ecode;
 }
 
+function calculateGetSignatureProgress(dectx, utxoListLength) {
+  let txNum = 0;
+  let issuanceNum = 0;
+  if (dectx.vin) {
+    txNum += dectx.vin.length;
+    for (let idx = 0; idx < dectx.vin.length; ++idx) {
+      if ('issuance' in dectx.vin[idx]) {
+        ++issuanceNum;
+      }
+    }
+  }
+  if (dectx.vout) txNum += dectx.vout.length;
+  txNum += issuanceNum;
+  return {
+    utxoNum: utxoListLength,
+    txNum: txNum,
+  };
+}
+
 const disconnectEcode = 0x6d00; // INS_NOT_SUPPORTED
 const accessingEcode = 0x9999;
 const accessingMsg = 'accessing other command';
@@ -1063,8 +1082,12 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
         'regtest' : 'mainnet';
     this.waitForConnecting = false;
     this.accessing = false;
+    this.connectAccessing = false;
     this.checkAppType = checkAppType;
     this.currentApplication = applicationType.Auto;
+    this.currentDevicePath = '';
+    this.lastConnectTime = 0;
+    this.lastConnectCheckTime = 0;
     // getSignature's state
     this.getSigState = {
       utxoNum: 0,
@@ -1087,6 +1110,13 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
     } else {
       return currentApplicationType.Empty;
     }
+  }
+
+  getLastConnectionInfo() {
+    return {
+      currentDevicePath: this.currentDevicePath,
+      lastConnectTime: this.lastConnectTime,
+    };
   }
 
   async getDeviceList() {
@@ -1157,6 +1187,14 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
             if (ecode === 0x9000) {
               this.transport = transport;
               this.currentApplication = ret.application;
+              this.lastConnectCheckTime = Date.now();
+              if (!path) {
+                const devList = await TransportNodeHid.list();
+                this.currentDevicePath = (!devList) ? '' : devList[0];
+              } else {
+                this.currentDevicePath = path;
+              }
+              this.lastConnectTime = Date.now();
               break;
             } else if (ecode !== disconnectEcode) {
               console.log('illegal error. ', ecode);
@@ -1225,14 +1263,35 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
   async isConnected() {
     let ecode = disconnectEcode;
     let errMsg = 'other error';
-    if (this.isAccessing()) {
-      // The connection with Ledger is valid because it is being accessed.
-      ecode = 0x9000;
-    } else if (this.transport !== undefined) {
+
+    if (this.accessing && this.connectAccessing) {
+      console.log('sleep start.');
+      sleep(200);
+      console.log('sleep end.');
+    }
+
+    if (this.transport === undefined) {
+      // disconnected
+    } else if (this.isAccessing()) {
+      const curTime = Date.now();
+      if (this.connectAccessing && (this.lastConnectCheckTime < curTime) &&
+          ((curTime - this.lastConnectCheckTime) > 500)) {
+        // disconnect or during connecting check.
+      } else {
+        // The connection with Ledger is valid because it is being accessed.
+        ecode = 0x9000;
+      }
+    } else {
       try {
+        this.connectAccessing = true;
         this.accessing = true;
-        const ret = await checkConnect(this.transport, this.checkAppType);
-        ecode = ret.errorCode;
+        if (this.transport !== undefined) {
+          const ret = await checkConnect(this.transport, this.checkAppType);
+          ecode = ret.errorCode;
+          if (ecode === 0x9000) {
+            this.lastConnectCheckTime = Date.now();
+          }
+        }
       } catch (e) {
         const errText = e.toString();
         if (errText.indexOf('DisconnectedDevice: Cannot write to HID device') >= 0) {
@@ -1252,6 +1311,7 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
         }
       } finally {
         this.accessing = false;
+        this.connectAccessing = false;
       }
       if (ecode !== 0x9000) await this.disconnect();
     }
@@ -1274,13 +1334,16 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
     if (this.transport !== undefined) {
       try {
         this.accessing = true;
-        await this.close(this.transport);
+        const transport = this.transport;
         this.transport = undefined;
+        await this.close(transport);
       } catch (e) {
         console.log(e);
       } finally {
         this.currentApplication = applicationType.Auto;
         this.accessing = false;
+        this.currentDevicePath = '';
+        this.lastConnectTime = 0;
       }
     }
   }
@@ -1514,7 +1577,6 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
     try {
       this.accessing = true;
       this.getSigState.current.state = getSignatureState.AnalyzeUtxo;
-      this.getSigState.utxoNum = walletUtxoList.length;
       this.getSigState.lastAccessTime = Date.now();
 
       // const dectx = cfdjs.ElementsDecodeRawTransaction({
@@ -1522,18 +1584,10 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
       //   mainchainNetwork: this.mainchainNetwork});
       const dectx = decodeRawTransaction(proposalTransaction);
       // console.log('*** dectx ***\n', JSON.stringify(dectx, null, '  '));
-      let issuanceNum = 0;
-      this.getSigState.txNum = 0;
-      if (dectx.vin) {
-        this.getSigState.txNum += dectx.vin.length;
-        for (let idx = 0; idx < dectx.vin.length; ++idx) {
-          if ('issuance' in dectx.vin[idx]) {
-            ++issuanceNum;
-          }
-        }
-      }
-      if (dectx.vout) this.getSigState.txNum += dectx.vout.length;
-      this.getSigState.txNum += issuanceNum;
+      const calcInfo = calculateGetSignatureProgress(
+          dectx, walletUtxoList.length);
+      this.getSigState.utxoNum = calcInfo.utxoNum;
+      this.getSigState.txNum = calcInfo.txNum;
       this.getSigState.current.utxoNum = 0;
       this.getSigState.current.txNum = 0;
       this.getSigState.current.sigNum = 0;
@@ -1608,7 +1662,9 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
         }
 
         if (!redeemScript) {
-          if (!utxo.pubkey) {
+          if (utxo.pubkey && (utxo.pubkey.length === 66)) {
+            redeemScript = this.getPublicKeyRedeemScript(utxo.pubkey);
+          } else {
             const p2 = 1; // = 0x10;
             const pubkeyRet = await getWalletPublicKey(
                 this.transport, utxo.bip32Path, p2);
@@ -1619,8 +1675,6 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
             }
             const pubkey = compressPubkey(pubkeyRet.pubkey);
             redeemScript = this.getPublicKeyRedeemScript(pubkey);
-          } else {
-            redeemScript = this.getPublicKeyRedeemScript(utxo.pubkey);
           }
         }
         utxoScriptList.push({
@@ -1730,8 +1784,8 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
       result.getSignature.total = this.getSigState.utxoNum;
       result.total.current = result.analyzeUtxo.current +
         result.inputTx.current + result.getSignature.current;
-      result.total.total = result.analyzeUtxo.total + result.inputTx.total +
-        result.getSignature.total;
+      result.total.total = result.analyzeUtxo.total +
+        result.inputTx.total + result.getSignature.total;
       result.lastAccessTime = this.getSigState.lastAccessTime;
       if (this.getSigState.lastAccessTime + timeout <= Date.now()) {
         result.errorCode = 0x6000;
@@ -1742,6 +1796,44 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
     result.success = (result.errorCode === 0x9000);
     result.errorCodeHex = result.errorCode.toString(16);
     return result;
+  }
+
+  calcSignatureProgress(proposalTransaction, walletUtxoList) {
+    let analyzeUtxoNum = 0;
+    let inputTxNum = 0;
+    let getSignatureNum = 0;
+    let ecode = 0x9000;
+    let errMsg = '';
+    try {
+      if (!walletUtxoList || !proposalTransaction) {
+        ecode = 0x6a80;
+        errMsg = 'Input parameter is null or empty';
+      } else {
+        // const dectx = cfdjs.ElementsDecodeRawTransaction({
+        //   hex: proposalTransaction, network: this.networkType,
+        //   mainchainNetwork: this.mainchainNetwork});
+        const dectx = decodeRawTransaction(proposalTransaction);
+        const ret = calculateGetSignatureProgress(dectx, walletUtxoList.length);
+        analyzeUtxoNum = ret.utxoNum;
+        inputTxNum = ret.txNum;
+        getSignatureNum = analyzeUtxoNum;
+      }
+    } catch (e) {
+      console.log(e);
+      ecode = 0x8000;
+      errMsg = e.toString();
+    }
+    return {
+      success: (ecode === 0x9000),
+      errorCode: ecode,
+      errorCodeHex: ecode.toString(16),
+      errorMessage: errMsg,
+      disconnect: false,
+      analyzeUtxo: {current: 0, total: analyzeUtxoNum},
+      inputTx: {current: 0, total: inputTxNum},
+      getSignature: {current: 0, total: getSignatureNum},
+      total: {current: 0, total: analyzeUtxoNum + inputTxNum + getSignatureNum},
+    };
   }
 };
 
