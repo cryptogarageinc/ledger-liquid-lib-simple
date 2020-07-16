@@ -22,6 +22,7 @@
     "@types/node": "^13.7.0",
     "@ledgerhq/hw-transport-node-hid": "^5.11.0",
     "big-integer": "^1.6.26",
+    "cfd-js-wasm": "github:cryptogarageinc/cfd-js-wasm#semver:^0.1.0",
     "ripemd160": "^2.0.2",
     "sha.js": "^2.4.11",
     "bs58": "^4.0.1"
@@ -41,6 +42,7 @@
     "example": "ts-node example.ts",
     "pubkey": "ts-node example.ts -dp",
     "setauthkey": "ts-node example.ts -a",
+    "sign": "ts-node sign-tool.ts",
     "format": "eslint --ext .js *.js src/ --fix",
     "eslint_check": "eslint --ext .js *.js src/"
   }
