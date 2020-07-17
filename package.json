@@ -46,7 +46,7 @@
     "sign": "ts-node sign-tool.ts sign",
     "authsig": "ts-node sign-tool.ts getauthsig",
     "format": "eslint --ext .js,.ts *.js *.ts src/ --fix",
-    "eslint_check": "eslint --ext .js *.js src/",
+    "eslint_check": "eslint --ext .js,.ts *.js *.ts src/",
     "test": "ts-node __test__/test.ts"
   }
 }
