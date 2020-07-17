@@ -1,33 +1,17 @@
 /* eslint-disable require-jsdoc */
-import {LedgerLiquidWrapper, WalletUtxoData, SignatureData, NetworkType, GetSignatureState, ProgressInfo, ResponseInfo, GetSignatureAddressResponse} from './src/ledger-liquid-lib';
+import {LedgerLiquidWrapper, NetworkType, GetSignatureState, ProgressInfo, ResponseInfo, GetSignatureAddressResponse} from './src/ledger-liquid-lib';
 
 process.on('unhandledRejection', console.dir);
 
-let hashType = 'p2sh-p2wpkh'; // 'p2sh-p2wsh';
 const blindOpt = {blind1: true, blind2: true};
 let networkType = NetworkType.LiquidV1;
-// eslint-disable-next-line prefer-const
-let tx2InputCount = 2;
-// eslint-disable-next-line prefer-const
-let signTargetIndex = [0, 1];
-let signedTest = false;
-let setIssueTx = 0;
-let setReissueTx = 0;
-let authorizationPrivkey = '47ab8b0e5f8ea508808f9e03b804d623a7cb81cbf1f39d3e976eb83f9284ecde';
 let setAuthorization = false;
 let authPubKey = ''; // 04b85b0e5f5b41f1a95bbf9a83edd95c741223c6d9dc5fe607de18f015684ff56ec359705fcf9bbeb1620fb458e15e3d99f23c6f5df5e91e016686371a65b16f0c
 let setIssuanceToTop = 0;
 let setReissuanceToTop = 0;
 let connectionTest = false;
 let connectDevice = '';
-let getLedgerPath = true;
-let mnemonic = '';
-let mnemonicCheck = true;
 // mnemonic = 'call node debug-console.js ledger hood festival pony outdoor always jeans page help symptom adapt obtain image bird duty damage find sense wasp box mail vapor plug general kingdom';
-let dumpTx = false;
-let txData = '';
-let signTarget = '';
-let fixedTest = false;
 let waitCancelCount = 0;
 let currentWaitCancelCount = 0;
 let dumpPubkeyMode = false;
@@ -44,20 +28,12 @@ for (let i = 2; i < process.argv.length; i++) {
       blindOpt.blind1 = false;
     } else if (process.argv[i] === '-nb2') {
       blindOpt.blind2 = false;
-    } else if (process.argv[i] === '-dl') {
-      getLedgerPath = false;
-    } else if (process.argv[i] === '-t') {
-      signedTest = true;
     } else if (process.argv[i] === '-tc') {
       connectionTest = true;
     } else if (process.argv[i] === '-a') {
       setAuthorization = true;
     } else if (process.argv[i] === '-dp') {
       dumpPubkeyMode = true;
-    } else if (process.argv[i] === '-f') {
-      fixedTest = true;
-    } else if (process.argv[i] === '-p') {
-      dumpTx = true;
     } else if (process.argv[i] === '-tcwc') {
       waitCancelCount = 30;
     } else if (process.argv[i] === '-it') {
@@ -70,46 +46,8 @@ for (let i = 2; i < process.argv.length; i++) {
       if (setIssuanceToTop) {
         setReissuanceToTop = 1;
       }
-    } else if (process.argv[i] === '-ic') {
-      mnemonicCheck = false;
-      getLedgerPath = false;
     } else if (i+1 < process.argv.length) {
-      if (process.argv[i] === '-h') {
-        ++i;
-        hashType = process.argv[i];
-      } else if (process.argv[i] === '-ak') {
-        ++i;
-        if (process.argv[i].length === 64) {
-          authorizationPrivkey = process.argv[i];
-        }
-      } else if (process.argv[i] === '-n') {
-        ++i;
-        mnemonic = process.argv[i];
-        getLedgerPath = false;
-      } else if (process.argv[i] === '-txc') {
-        ++i;
-        txData = process.argv[i];
-      } else if (process.argv[i] === '-st') {
-        ++i;
-        signTarget = process.argv[i];
-      } else if (process.argv[i] === '-uc') {
-        ++i;
-        tx2InputCount = parseInt(process.argv[i]);
-      } else if (process.argv[i] === '-i') {
-        ++i;
-        setIssueTx = parseInt(process.argv[i]);
-      } else if (process.argv[i] === '-ri') {
-        ++i;
-        setReissueTx = parseInt(process.argv[i]);
-      } else if (process.argv[i] === '-si') {
-        ++i;
-        const numArr = [];
-        const list = process.argv[i].split(',');
-        for (const input of list) {
-          numArr.push(parseInt(input));
-        }
-        signTargetIndex = numArr;
-      } else if (process.argv[i] === '-cd') {
+      if (process.argv[i] === '-cd') {
         ++i;
         connectDevice = process.argv[i];
       } else if (process.argv[i] === '-path') {
