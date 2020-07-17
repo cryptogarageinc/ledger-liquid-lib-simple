@@ -19,18 +19,20 @@
   "module": "index.js",
   "types": "./src/ledger-liquid-lib.d.ts",
   "dependencies": {
-    "@types/node": "^13.7.0",
     "@ledgerhq/hw-transport-node-hid": "^5.11.0",
+    "@rushstack/ts-command-line": "^4.4.6",
+    "@types/node": "^13.7.0",
     "big-integer": "^1.6.26",
+    "bs58": "^4.0.1",
+    "cfd-js-wasm": "github:cryptogarageinc/cfd-js-wasm#semver:^0.1.2",
     "ripemd160": "^2.0.2",
-    "sha.js": "^2.4.11",
-    "bs58": "^4.0.1"
+    "sha.js": "^2.4.11"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^2.23.0",
     "@typescript-eslint/parser": "^2.23.0",
-    "eslint": "*",
-    "eslint-config-google": "*",
+    "eslint": "^7.4.0",
+    "eslint-config-google": "^0.14.0",
     "ts-node": "^8.8.1",
     "typescript": "^3.8.3",
     "typescript-json-schema": "^0.42.0",
@@ -41,7 +43,10 @@
     "example": "ts-node example.ts",
     "pubkey": "ts-node example.ts -dp",
     "setauthkey": "ts-node example.ts -a",
-    "format": "eslint --ext .js *.js src/ --fix",
-    "eslint_check": "eslint --ext .js *.js src/"
+    "sign": "ts-node sign-tool.ts sign",
+    "authsig": "ts-node sign-tool.ts getauthsig",
+    "format": "eslint --ext .js,.ts *.js *.ts src/ --fix",
+    "eslint_check": "eslint --ext .js,.ts *.js *.ts src/",
+    "test": "ts-node __test__/test.ts"
   }
 }

@@ -2,9 +2,13 @@
 
 ## Usage
 
-   - example: npm run example
+   1. calculate auth signature: `npm run authsig -- -a <authPrivkey> -t <txHex>`
 
-   - dump pubkey: `npm run pubkey -- [-r] -path <bip32 path>`
+   2. sign: `npm run sign -- -s <authSignature> [-n <nettype>] -t <txHex> -i <txid> -v <vout> -c <amountCommitment> -p <bip32Path> [-d <descriptor>] [-a <address> [-r <redeemScript>]]`
+
+   3. example: npm run example
+
+   4. dump pubkey: `npm run pubkey -- [-r] -path <bip32 path>`
      - ex:mainnet) npm run pubkey -- -path m/44h/0h/0h
      - ex:testnet) npm run pubkey -- -r -path m/44h/0h/0h
 

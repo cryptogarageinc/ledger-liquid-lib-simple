@@ -173,7 +173,7 @@ export class LedgerLiquidWrapper {
   isConnected(): Promise<ResponseInfo>;
 
   /**
-   * disconnect current devive.
+   * disconnect current device.
    */
   disconnect(): Promise<void>;
 
