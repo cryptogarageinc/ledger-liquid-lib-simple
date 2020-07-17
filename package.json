@@ -45,9 +45,8 @@
     "setauthkey": "ts-node example.ts -a",
     "sign": "ts-node sign-tool.ts sign",
     "authsig": "ts-node sign-tool.ts getauthsig",
-    "format": "eslint --ext .js *.js src/ --fix",
+    "format": "eslint --ext .js,.ts *.js *.ts src/ --fix",
     "eslint_check": "eslint --ext .js *.js src/",
-    "tstest": "ts-node __test__/test.ts",
-    "test": "jest --no-cache"
+    "test": "ts-node __test__/test.ts"
   }
 }
