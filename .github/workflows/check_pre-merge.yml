@@ -24,13 +24,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2.1.0
+    - uses: actions/setup-node@v2.1.2
       continue-on-error: true
       timeout-minutes: 1
       with:
         node-version: ${{ matrix.node }}
     - name: setup-node retry
-      uses: actions/setup-node@v2.1.0
+      uses: actions/setup-node@v2.1.2
       timeout-minutes: 1
       with:
         node-version: ${{ matrix.node }}
