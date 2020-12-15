@@ -141,7 +141,7 @@ function createExtPubKey(
     version, depthStr, fingerprint, childStr, chainCode, publicKey,
   ].join('');
   return encodeBase58Check(Buffer.from(xpubHex, 'hex'));
-};
+}
 
 function readVarIntFromBuffer(buffer, startOffset) {
   let result;
@@ -312,7 +312,6 @@ function decodeRawTransaction(proposalTx) {
     vin: txin,
     vout: txout,
   };
-  ;
 }
 
 // ---- ledger-liquid-lib ----
