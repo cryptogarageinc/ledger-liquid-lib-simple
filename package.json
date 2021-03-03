@@ -37,7 +37,7 @@
     "run-script-os": "^1.1.5",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.2",
-    "typescript-json-schema": "^0.45.1"
+    "typescript-json-schema": "^0.49.0"
   },
   "scripts": {
     "example": "ts-node example.ts",
