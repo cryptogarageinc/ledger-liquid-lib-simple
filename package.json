@@ -19,25 +19,25 @@
   "module": "index.js",
   "types": "./src/ledger-liquid-lib.d.ts",
   "dependencies": {
-    "@ledgerhq/hw-transport-node-hid": "^5.45.0",
-    "@rushstack/ts-command-line": "^4.7.8",
-    "@types/node": "^14.14.31",
-    "big-integer": "^1.6.26",
+    "@ledgerhq/hw-transport-node-hid": "^5.46.0",
+    "@rushstack/ts-command-line": "^4.7.9",
+    "@types/node": "^14.14.35",
+    "big-integer": "^1.6.48",
     "bs58": "^4.0.1",
-    "cfd-js-wasm": "github:cryptogarageinc/cfd-js-wasm#semver:^0.3.2",
+    "cfd-js-wasm": "github:cryptogarageinc/cfd-js-wasm#semver:^0.3.4",
     "ripemd160": "^2.0.2",
     "sha.js": "^2.4.11"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^4.16.1",
-    "@typescript-eslint/parser": "^4.16.1",
-    "eslint": "^7.21.0",
-    "eslint-config-google": "^0.14.0",
+    "@typescript-eslint/eslint-plugin": "^4.19.0",
+    "@typescript-eslint/parser": "^4.19.0",
+    "eslint": "^7.22.0",
+    "eslint-config-google": "*",
     "npm-run-all": "^4.1.5",
-    "run-script-os": "^1.1.5",
+    "run-script-os": "^1.1.6",
     "ts-node": "^9.1.1",
-    "typescript": "^4.2.2",
-    "typescript-json-schema": "^0.49.0"
+    "typescript": "^4.2.3",
+    "typescript-json-schema": "^0.50.0"
   },
   "scripts": {
     "example": "ts-node example.ts",
