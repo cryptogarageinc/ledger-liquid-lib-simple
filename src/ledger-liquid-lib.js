@@ -1207,7 +1207,7 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
               } else {
                 this.currentDevicePath = path;
               }
-              this.lastConnectTime = Date.now();
+              this.lastConnectTime = this.lastConnectCheckTime;
               break;
             } else if (ecode !== disconnectEcode) {
               console.log('illegal error. ', ecode);
@@ -1218,6 +1218,8 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
             // console.log(`connection fail. count=${count}`, e);
             const errText = e.toString();
             if (errText.indexOf('DisconnectedDevice: Cannot write to HID device') >= 0) {
+              // disconnect error
+            } else if (errText.indexOf('TypeError: Cannot write to hid device') >= 0) {
               // disconnect error
             } else if (errText.indexOf('TransportError: NoDevice') >= 0) {
               // device connect error
@@ -1308,6 +1310,8 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
       } catch (e) {
         const errText = e.toString();
         if (errText.indexOf('DisconnectedDevice: Cannot write to HID device') >= 0) {
+          // disconnect error
+        } else if (errText.indexOf('TypeError: Cannot write to hid device') >= 0) {
           // disconnect error
         } else if (errText.indexOf('TransportError: NoDevice') >= 0) {
           // device connect error
