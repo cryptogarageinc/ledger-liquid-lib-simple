@@ -1202,8 +1202,10 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
               this.currentApplication = ret.application;
               this.lastConnectCheckTime = Date.now();
               if (!path) {
-                const devList = await TransportNodeHid.list();
-                this.currentDevicePath = (!devList) ? '' : devList[0];
+                setTimeout(async () => {
+                  const devList = await TransportNodeHid.list();
+                  this.currentDevicePath = (!devList) ? '' : devList[0];
+                }, 1);
               } else {
                 this.currentDevicePath = path;
               }
@@ -1218,6 +1220,8 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
             // console.log(`connection fail. count=${count}`, e);
             const errText = e.toString();
             if (errText.indexOf('DisconnectedDevice: Cannot write to HID device') >= 0) {
+              // disconnect error
+            } else if (errText.indexOf('DisconnectedDeviceDuringOperation: Cannot write to hid device') >= 0) {
               // disconnect error
             } else if (errText.indexOf('TypeError: Cannot write to hid device') >= 0) {
               // disconnect error
@@ -1310,6 +1314,8 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
       } catch (e) {
         const errText = e.toString();
         if (errText.indexOf('DisconnectedDevice: Cannot write to HID device') >= 0) {
+          // disconnect error
+        } else if (errText.indexOf('DisconnectedDeviceDuringOperation: Cannot write to hid device') >= 0) {
           // disconnect error
         } else if (errText.indexOf('TypeError: Cannot write to hid device') >= 0) {
           // disconnect error
