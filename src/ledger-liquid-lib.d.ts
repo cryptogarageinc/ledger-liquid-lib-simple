@@ -1,5 +1,16 @@
 /* eslint-disable require-jsdoc */
 
+// import {Device} from 'usb-detection';
+export interface Device {
+  locationId: number;
+  vendorId: number;
+  productId: number;
+  deviceName: string;
+  manufacturer: string;
+  serialNumber: string;
+  deviceAddress: number;
+}
+
 export enum NetworkType {
   LiquidV1 = 'liquidv1',
   Regtest = 'regtest',
@@ -21,6 +32,11 @@ export enum GetSignatureState {
   AnalyzeUtxo = 'analyzeUtxo', // Preparation before 'input transaction'
   InputTx = 'inputTx', // input transaction to ledger
   GetSignature = 'getSignature', // request getSignature to ledger
+}
+
+export enum UsbDetectionType {
+  Add = 'add', // add usb connection
+  Remove = 'remove', // remove usb connection
 }
 
 export interface UtxoData {
@@ -120,6 +136,31 @@ export class LedgerLiquidWrapper {
   constructor(network: NetworkType, checkApplication?: boolean);
 
   /**
+   * start connection state change monitoring.
+   */
+  static startUsbDetectMonitoring(): void;
+
+  /**
+   * finish connection state change monitoring.
+   */
+  static finishUsbDetectMonitoring(): void;
+
+  /**
+   * register connection state changed listener.
+   *
+   * @param callback callback function.
+   */
+  static registerUsbDetectListener(
+    callback: (state: UsbDetectionType, device: Device) => void): void
+
+  /**
+   * get usb device list.
+   *
+   * @return GetDeviceListResponse wrapped promise.
+   */
+  getDeviceList(): Promise<GetDeviceListResponse>;
+
+  /**
    * get application type.
    *
    * @return ApplicationType
@@ -135,13 +176,6 @@ export class LedgerLiquidWrapper {
    * @return ConnectionInfo.
    */
   getLastConnectionInfo(): ConnectionInfo;
-
-  /**
-   * get usb device list.
-   *
-   * @return GetDeviceListResponse wrapped promise.
-   */
-  getDeviceList(): Promise<GetDeviceListResponse>;
 
   /**
    * Check if it is accessing Ledger.

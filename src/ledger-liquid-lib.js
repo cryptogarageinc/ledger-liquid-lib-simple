@@ -2,7 +2,9 @@
 // import * as TransportNodeHid from '@ledgerhq/hw-transport-node-hid';
 const TransportNodeHid = require('@ledgerhq/hw-transport-node-hid').default;
 // const TransportWebUSB = require('@ledgerhq/hw-transport-webusb').default;
+const LedgerDeviceInfo = require('@ledgerhq/devices');
 // const cfdjs = require('cfd-js');
+const usb = require('usb');
 const Ripemd160 = require('ripemd160');
 const sha = require('sha.js');
 const base58 = require('bs58');
@@ -1075,6 +1077,58 @@ const getSignatureState = {
   GetSignature: 'getSignature',
 };
 
+const usbDetectionType = {
+  Add: 'add',
+  Remove: 'remove',
+};
+
+let isStartMonitoring = false;
+const notifyFunctionList = [];
+const usbTimeout = 5000;
+
+function connectionNotification(type, usbDevice) {
+  const deviceInfo = {
+    locationId: 0, // unknown
+    vendorId: usbDevice.deviceDescriptor.idVendor,
+    productId: usbDevice.deviceDescriptor.idProduct,
+    deviceName: '', // SPDRP_FRIENDLYNAME or SPDRP_DEVICEDESC
+    manufacturer: '', // SPDRP_MFG
+    serialNumber: '', // <device-ID>\<instance-specific-ID>
+    deviceAddress: usbDevice.deviceAddress,
+  };
+  // console.log(`## connectionNotification: ${type}: `, deviceInfo);
+  // console.log(`## usbDevice: `, usbDevice);
+  const vendorId = deviceInfo.vendorId;
+  if (LedgerDeviceInfo.ledgerUSBVendorId != vendorId) {
+    return;
+  }
+  if (usbDevice.timeout < usbTimeout) {
+    // The ledger device may take over 2000msec to respond.
+    usbDevice.timeout = usbTimeout;
+  }
+  if (deviceInfo.productId != 1) { // ledger top view
+    return;
+  }
+
+  if (notifyFunctionList) {
+    for (const func of notifyFunctionList) {
+      func(type, deviceInfo);
+    }
+  }
+}
+
+function detachDetectedUsb(device) {
+  if (isStartMonitoring) {
+    connectionNotification(usbDetectionType.Remove, device);
+  }
+}
+
+function attachDetectedUsb(device) {
+  if (isStartMonitoring) {
+    connectionNotification(usbDetectionType.Add, device);
+  }
+}
+
 const ledgerLiquidWrapper = class LedgerLiquidWrapper {
   constructor(networkType, checkApplication = false) {
     this.transport = undefined;
@@ -1115,21 +1169,25 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
     };
   }
 
-  getCurrentApplication() {
-    if (this.currentApplication === applicationType.LiquidV1) {
-      return currentApplicationType.LiquidHeadless;
-    } else if (this.currentApplication === applicationType.Regtest) {
-      return currentApplicationType.LiquidTestHeadless;
-    } else {
-      return currentApplicationType.Empty;
+  static startUsbDetectMonitoring() {
+    if (!isStartMonitoring) {
+      isStartMonitoring = true;
+      usb.on('detach', detachDetectedUsb);
+      usb.on('attach', attachDetectedUsb);
+      // usb.setDebugLevel(4); // debug level
     }
   }
 
-  getLastConnectionInfo() {
-    return {
-      currentDevicePath: this.currentDevicePath,
-      lastConnectTime: this.lastConnectTime,
-    };
+  static finishUsbDetectMonitoring() {
+    if (isStartMonitoring) {
+      isStartMonitoring = false;
+      usb.removeListener('detach', detachDetectedUsb);
+      usb.removeListener('attach', attachDetectedUsb);
+    }
+  }
+
+  static registerUsbDetectListener(func) {
+    notifyFunctionList.push(func);
   }
 
   async getDeviceList() {
@@ -1151,6 +1209,23 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
       errorMessage: errMsg,
       disconnect: false,
       deviceList: devList,
+    };
+  }
+
+  getCurrentApplication() {
+    if (this.currentApplication === applicationType.LiquidV1) {
+      return currentApplicationType.LiquidHeadless;
+    } else if (this.currentApplication === applicationType.Regtest) {
+      return currentApplicationType.LiquidTestHeadless;
+    } else {
+      return currentApplicationType.Empty;
+    }
+  }
+
+  getLastConnectionInfo() {
+    return {
+      currentDevicePath: this.currentDevicePath,
+      lastConnectTime: this.lastConnectTime,
     };
   }
 
@@ -1203,7 +1278,9 @@ const ledgerLiquidWrapper = class LedgerLiquidWrapper {
               this.lastConnectCheckTime = Date.now();
               if (!path) {
                 setTimeout(async () => {
+                  console.log('list start');
                   const devList = await TransportNodeHid.list();
+                  console.log('list end');
                   this.currentDevicePath = (!devList) ? '' : devList[0];
                 }, 1);
               } else {
@@ -1879,3 +1956,6 @@ module.exports.GetSignatureState = getSignatureState;
 module.exports.GetSignatureState.AnalyzeUtxo = getSignatureState.AnalyzeUtxo;
 module.exports.GetSignatureState.InputTx = getSignatureState.InputTx;
 module.exports.GetSignatureState.GetSignature = getSignatureState.GetSignature;
+module.exports.UsbDetectionType = usbDetectionType;
+module.exports.UsbDetectionType.Add = usbDetectionType.Add;
+module.exports.UsbDetectionType.Remove = usbDetectionType.Remove;
