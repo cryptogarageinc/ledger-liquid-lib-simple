@@ -1,5 +1,5 @@
 import * as cfdjs from 'cfd-js-wasm';
-import { exit } from 'process';
+import {exit} from 'process';
 import {LedgerSignUtil, SignUtxoData} from '../sign-lib';
 import {NetworkType} from '../src/ledger-liquid-lib';
 
@@ -307,7 +307,8 @@ testFuncList.push(async function() {
   try {
     await signUtil.convertUtxoData(network, utxoData, func);
     throw new Error('convertUtxoData not error.');
-  } catch (e) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
     const errMsg = e.toString();
     const expect = 'Error: p2pkh is not support.';
     if (errMsg != expect) {
@@ -335,7 +336,8 @@ testFuncList.push(async function() {
   try {
     await signUtil.convertUtxoData(network, utxoData, func);
     throw new Error('convertUtxoData not error.');
-  } catch (e) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
     const errMsg = e.toString();
     const expect = 'Error: p2pkh is not support.';
     if (errMsg != expect) {
@@ -364,7 +366,8 @@ testFuncList.push(async function() {
   try {
     await signUtil.convertUtxoData(network, utxoData, func);
     throw new Error('convertUtxoData not error.');
-  } catch (e) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
     const errMsg = e.toString();
     const expect = 'Error: p2sh is not support.';
     if (errMsg != expect) {
@@ -393,7 +396,8 @@ testFuncList.push(async function() {
   try {
     await signUtil.convertUtxoData(network, utxoData, func);
     throw new Error('convertUtxoData not error.');
-  } catch (e) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
     const errMsg = e.toString();
     // for p2sh check
     const expect = 'Error: address not equals.';
