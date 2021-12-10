@@ -38,7 +38,7 @@ for (let i = 2; i < process.argv.length; i++) {
     } else if (process.argv[i] === '-tcwc') {
       waitCancelCount = 30;
     } else if (process.argv[i] === '-pegin') {
-      peginTest = true;      
+      peginTest = true;
     } else if (process.argv[i] === '-it') {
       setIssuanceToTop = 2;
       if (setReissuanceToTop) {
