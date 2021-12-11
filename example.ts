@@ -337,13 +337,15 @@ async function execFixedTest() {
             await dumpSignatureProgress(ledgerLib);
           }, 500);
         }
-        for (let idx in walletUtxoList) {
-          const pubkeyInfo1 = await ledgerLib.getWalletPublicKey(
-              walletUtxoList[idx].bip32Path);
-          if (!pubkeyInfo1.success) {
-            console.log('getWalletPublicKey failed. ', pubkeyInfo1);
-          } else {
-            walletUtxoList[idx].pubkey = pubkeyInfo1.publicKey;
+        for (const idx in walletUtxoList) {
+          if (idx) {
+            const pubkeyInfo1 = await ledgerLib.getWalletPublicKey(
+                walletUtxoList[idx].bip32Path);
+            if (!pubkeyInfo1.success) {
+              console.log('getWalletPublicKey failed. ', pubkeyInfo1);
+            } else {
+              walletUtxoList[idx].pubkey = pubkeyInfo1.publicKey;
+            }
           }
         }
 
