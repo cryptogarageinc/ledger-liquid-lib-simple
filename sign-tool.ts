@@ -72,6 +72,7 @@ const dumpSignatureProgress = async function(
 };
 
 const signFunction = async function(
+    authKey: string,
     authSig: string,
     network: string,
     proposalTx: string,
@@ -86,8 +87,33 @@ const signFunction = async function(
   if (!proposalTx) {
     throw new Error('Invalid tx hex.');
   }
+  if (!authKey && !authSig) {
+    throw new Error('Invalid authorize parameter.');
+  }
   const networkType = (network == 'liquidv1') ?
       NetworkType.LiquidV1 : NetworkType.Regtest;
+
+  if (!authSig) {
+    const authorizationHash = await cfdjsObj.SerializeLedgerFormat({
+      tx: proposalTx,
+      isAuthorization: true,
+    });
+    const authSigObj = await cfdjsObj.CalculateEcSignature({
+      sighash: authorizationHash.sha256,
+      privkeyData: {
+        privkey: authKey,
+        wif: false,
+      },
+      isGrindR: false,
+    });
+    const authDerSigData = await cfdjsObj.EncodeSignatureByDer({
+      signature: authSigObj.signature,
+      sighashType: 'all',
+    });
+    authSig = authDerSigData.signature.substring(
+        0, authDerSigData.signature.length - 2);
+  }
+
   const walletUtxoList = [];
   walletUtxoList.push({
     txid, vout, redeemScript, address, descriptor,
@@ -126,6 +152,7 @@ const signFunction = async function(
 };
 
 class SignAction extends CommandLineAction {
+  private _authPrivkey!: CommandLineStringParameter;
   private _authSig!: CommandLineStringParameter;
   private _network!: CommandLineChoiceParameter;
   private _tx!: CommandLineStringParameter;
@@ -147,11 +174,18 @@ class SignAction extends CommandLineAction {
   }
 
   protected onDefineParameters(): void { // abstract
+    this._authPrivkey = this.defineStringParameter({
+      parameterLongName: '--authkey',
+      parameterShortName: '-k',
+      description: 'Authorization Privkey',
+      required: false,
+      argumentName: 'AUTHKEY',
+    });
     this._authSig = this.defineStringParameter({
       parameterLongName: '--authsig',
       parameterShortName: '-s',
       description: 'Authorization Signature',
-      required: true,
+      required: false,
       argumentName: 'AUTHSIG',
     });
     this._network = this.defineChoiceParameter({
@@ -233,7 +267,11 @@ class SignAction extends CommandLineAction {
     } else {
       tx = this._tx.value;
     }
+    if (!this._authPrivkey.value && !this._authSig.value) {
+      throw new Error('require authorizePrivkey or authorizeSignature.');
+    }
     return signFunction(
+        this._authPrivkey.value || '',
         this._authSig.value || '',
         this._network.value || '',
         tx || '',
