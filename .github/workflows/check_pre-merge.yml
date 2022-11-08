@@ -19,18 +19,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-18.04]
+        os: [macos-latest, windows-latest, ubuntu-20.04]
         node: [12, 14]
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2.1.2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
       continue-on-error: true
       timeout-minutes: 1
       with:
         node-version: ${{ matrix.node }}
     - name: setup-node retry
-      uses: actions/setup-node@v2.1.2
+      uses: actions/setup-node@v3
       timeout-minutes: 1
       with:
         node-version: ${{ matrix.node }}
@@ -45,7 +45,7 @@ jobs:
         echo "node_version=$node_ver"
       shell: bash
     - name: node_modules-useCache
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       id: node_cache
       with:
         path: node_modules
@@ -59,7 +59,7 @@ jobs:
         echo "::set-output name=npm_cachedir::$(npm config get cache)"
     - name: use npm cache
       if: steps.node_cache.outputs.cache-hit != 'true'
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       id: npm_cache
       with:
         path: ${{ steps.npm_info.outputs.npm_cachedir }}
